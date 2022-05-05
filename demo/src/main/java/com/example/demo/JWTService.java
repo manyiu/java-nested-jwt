@@ -1,5 +1,7 @@
 package com.example.demo;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.nimbusds.jose.EncryptionMethod;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWEAlgorithm;
@@ -63,8 +65,6 @@ public class JWTService {
 
         String fileContentString = Base64.getEncoder().encodeToString(fileContent);
 
-        System.out.println("file content: " + fileContentString);
-
         byte[] signatureKeyByte = new byte[0];
         ;
 
@@ -86,16 +86,17 @@ public class JWTService {
                     new JWTClaimsSet.Builder()
                             .subject("Demo")
                             .issueTime(new Date())
-                            .issuer("eMPF")
+                            .issuer("Trustee Name")
                             .claim("content", fileContentString)
+                            .claim("fileName", "file_name.csv")
                             .expirationTime(new Date(new Date().getTime() + 60 * 1000))
                             .build());
 
             signedJWT.sign(signer);
 
-            String s = signedJWT.serialize();
+            Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
-            System.out.println("serialized signed jwt: " + s);
+            System.out.println(signedJWT.serialize());
 
             JWEObject jweObject = new JWEObject(
                     new JWEHeader.Builder(JWEAlgorithm.RSA_OAEP_256, EncryptionMethod.A256GCM)
@@ -106,6 +107,13 @@ public class JWTService {
             RSAKey encryptionJWK = RSAKey.parse(encryptionCert);
 
             jweObject.encrypt(new RSAEncrypter(encryptionJWK));
+
+            System.out.println(gson.toJson(jweObject.getHeader()));
+            System.out.println(gson.toJson(jweObject.getEncryptedKey()));
+            // System.out.println(gson.toJson(jweObject.getIV()));
+            // System.out.println(gson.toJson(jweObject.getState()));
+            // System.out.println(gson.toJson(jweObject.getPayload()));
+            // System.out.println(gson.toJson(jweObject.serialize()));
 
             String jweString = jweObject.serialize();
 
